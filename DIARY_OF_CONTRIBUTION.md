@@ -42,9 +42,11 @@
 
 **Jack:**
 - Class Diagram
+- (pls fill out the rest)
 
 **Fraser:**
 - Design overview diagram 
+- (pls fill out the rest)
 
 **Scott:**
 - Started on design writeup
