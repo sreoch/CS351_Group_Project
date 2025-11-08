@@ -11,12 +11,13 @@ public enum MessageType {
     VIEW_TRANSACTIONS,
     LOGOUT,
 
-//    Message types for Server -> Clint
+//    Message types for Server -> Client
     LOGIN_SUCCESS,
     LOGIN_FAILED,
     SUCCESS,
     FAILED,
     BALANCE_UPDATE,
-    TRANSACTION_LIST
+    TRANSACTION_LIST,
+    CONNECTION_TIMEOUT
 
 }
