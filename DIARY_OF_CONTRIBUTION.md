@@ -46,7 +46,7 @@
 
 **Fraser:**
 - Design overview diagram 
-- (pls fill out the rest)
+- Initial draft of API docs
 
 **Scott:**
 - Started on design writeup
