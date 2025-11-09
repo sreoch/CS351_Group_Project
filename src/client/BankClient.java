@@ -79,15 +79,60 @@ public class BankClient {
             scanner.nextLine();
 
             switch (choice) {
-                case 1: break;
-                case 2: break;
-                case 3: break;
-                case 4: break;
-                case 5: break;
+                case 1: handleTransfer(); break;
+                case 2: handleDeposit(); break;
+                case 3: handleWithdraw(); break;
+                case 4: handleViewTransactions(); break;
+                case 5: logout(); break;
                 default:
                     System.out.println("Invalid choice");
             }
         }
+    }
+
+    private void handleTransfer() throws IOException, ClassNotFoundException {
+        System.out.println("Transfer to (username): ");
+        String toUser = scanner.nextLine();
+
+        System.out.println("Amount: ");
+        double amount = scanner.nextDouble();
+
+        Message msg = new Message(MessageType.TRANSFER, toUser + ":" + amount);
+        out.writeObject(msg);
+
+        Message response = (Message) in.readObject();
+        System.out.println(response.getPayload());
+    }
+
+    private void handleDeposit() throws IOException, ClassNotFoundException {
+        System.out.println("Enter the amount you want to deposit: £");
+        double amount = scanner.nextDouble();
+
+        Message msg = new Message(MessageType.DEPOSIT, String.valueOf(amount));
+        out.writeObject(msg);
+
+        Message response = (Message) in.readObject();
+        System.out.println(response.getPayload());
+    }
+
+    private void handleWithdraw() throws IOException, ClassNotFoundException {
+        System.out.println("Enter the amount you want to withdraw: £");
+        double amount = scanner.nextDouble();
+
+        Message msg = new Message(MessageType.WITHDRAW, String.valueOf(amount));
+        out.writeObject(msg);
+
+        Message response  = (Message) in.readObject();
+        System.out.println(response.getPayload());
+    }
+
+    private void handleViewTransactions() throws IOException, ClassNotFoundException {
+        Message msg = new Message(MessageType.VIEW_TRANSACTIONS, "");
+        out.writeObject(msg);
+
+        Message response = (Message) in.readObject();
+        System.out.println("\n--- Transaction History ---");
+        System.out.println(response.getPayload());
     }
 
     private void logout() throws IOException {
