@@ -52,8 +52,9 @@
 - Started on design writeup
 - Set up repo including diary of contribution
 - Created folder structure 
-- Started adding some shared classes such as Message
-- MessageType and TransactionType enums
+- Implemented shared classes (Message, MessageType, TransactionType, Account, Transaction)
+- Added BanKClient implementation with features (login, transfer, deposit, withdraw, view transactions, logout)
+- Created unit tests for account and transaction classes
 
 **Collaborative Work:**
 - All members: Collaboratively came to an agreement on design process and project scope (4th Nov, 1.5 hours)
