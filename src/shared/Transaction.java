@@ -37,4 +37,9 @@ public class Transaction implements Serializable {
     public LocalDateTime getTimestamp() {
         return timestamp;
     }
+
+    @Override
+    public String toString() {
+        return String.format("[%s] %s -> %s: £%.2f (%s)", timestamp, fromAccount, toAccount, amount, type);
+    }
 }
