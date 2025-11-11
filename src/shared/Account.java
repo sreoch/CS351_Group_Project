@@ -3,18 +3,12 @@ package shared;
 import java.io.Serializable;
 
 public class Account implements Serializable {
-    private String username;
-    private String passwordHash;
+    private String id;
+    private User user;
     private double balance;
 
-    public Account(String username, String password) {
-        this.username = username;
-        this.passwordHash = password; //TODO: need to hash properly
+    public Account(User user) {
         this.balance = 1000.0; // the starting balance is always 1000
-    }
-
-    public String getUsername() {
-        return username;
     }
 
     public double getBalance() {
@@ -40,7 +34,7 @@ public class Account implements Serializable {
         return false;
     }
 
-    public boolean checkPassword(String password) {
-        return this.passwordHash.equals(password);
+    public User getUser() {
+        return user;
     }
 }
