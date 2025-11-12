@@ -34,8 +34,7 @@ public class ClientHandler implements Runnable {
         String[] splitPayload = payload.split(":");
         System.out.println("User is trying to create account");
         if (splitPayload.length != 2) {
-            System.out.println("Login Failed");
-            return new Message(MessageType.LOGIN_FAILED, "Message payload not in correct form.");
+            return new Message(MessageType.FAILED, "Message payload not in correct form.");
         }
         System.out.println("Attempting to add new user");
         boolean result = server.addNewAccount(splitPayload[0], splitPayload[1]);
@@ -70,7 +69,7 @@ public class ClientHandler implements Runnable {
         try {
             amount = Double.parseDouble(splitPayload[0]);
         } catch (NumberFormatException e) {
-            return new Message(MessageType.FAILED, "Amount must be an int.");
+            return new Message(MessageType.FAILED, "Amount must be a double.");
         }
         if (amount <= 0) {
             return new Message(MessageType.FAILED, "Amount must be greater than £0");
@@ -80,14 +79,13 @@ public class ClientHandler implements Runnable {
         if (result == true) {
             return new Message(MessageType.SUCCESS, "Successfully deposited");
         } else {
-            return new Message(MessageType.FAILED, "An error occured while making deposit");
+            return new Message(MessageType.FAILED, "An error occurred while making deposit");
         }
     }
 
     private Message routeMessage(Message message) {
         MessageType type = message.getType();
         String payload = message.getPayload();
-        String[] splitPayload = payload.split(":");
         System.out.println("Handling message");
         switch (type) {
             case MessageType.LOGIN:

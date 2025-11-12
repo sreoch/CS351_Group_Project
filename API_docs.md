@@ -15,19 +15,33 @@ For the requests sent over a socket, the messageType determines what is to be do
 ### Example Requests
 
 - LOGIN
-  - Message(MessageType.LOGIN, "scott:passwordhere")
+  - Example Request: 
+    - Message(MessageType.LOGIN, "scott:passwordhere")
+  - Example Responses: 
+    - Message(MessageType.LOGIN_SUCCESS, "Login Successfull")
+    - Message(MessageType.LOGIN_FAILED, "Login failed. Invalid Credentials")
+    - Message(MessageType.LOGIN_FAILED, "Message payload not in correct form.");
 - CREATE_ACCOUNT
-  - Message(MessageType.CREATE_ACCOUNT, "scott:passwordhere")
+  - Example Requst: 
+    - Message(MessageType.CREATE_ACCOUNT, "scott:passwordhere")
+  - Example Responses:
+    - Message(MessageType.SUCCESS, "Account successfully created");
+    - Message(MessageType.FAILED, "Could not create account. User may already exist.")
 - TRANSFER
-  - Message(MessageType.TRANSFER, "{100:AccountThatBelongsToUser:recipientUserName:AccountThatBelongsToRecipient}")
+  - Requst: Message(MessageType.TRANSFER, "{100:AccountThatBelongsToUser:recipientUserName:AccountThatBelongsToRecipient}")
 - DEPOSIT
-  - Message(MessageType.DEPOSIT, "100:AccountThatBelongsToUser")
+  - Example Request:
+    - Message(MessageType.DEPOSIT, "100:AccountThatBelongsToUser")
+  - Example Response:
+    - Message(MessageType.SUCCESS, "Successfully deposited")
+    - Message(MessageType.FAILED, "Amount must be greater than £0")
+    - Message(MessageType.FAILED, "Amount must be a double.")
 - WITHDRAW
-  - Message(MessageType.WITHDRAW, "100":AccountThatBelongsToUser)
+  - Requst: Message(MessageType.WITHDRAW, "100":AccountThatBelongsToUser)
 - VIEW_TRANSACTIONS
-  - Message(MessageType.VIEW_TRANSACTIONS)
+  - Requst: Message(MessageType.VIEW_TRANSACTIONS)
 - LOGOUT
-  - Message(MessageType.LOGOUT)
+  - Requst: Message(MessageType.LOGOUT)
 
 ## Request Types Server -> client
 
