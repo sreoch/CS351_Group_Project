@@ -37,11 +37,33 @@ public class Server implements Runnable {
             try {
                 Socket socket = serverSocket.accept();
                 System.out.println("passing connection to client handler");
-                threadPool.submit(new ClientHandler(socket));
+                threadPool.submit(new ClientHandler(socket, this));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    public User authenticateUser(String username, String password) {
+        User user = users.get(username);
+        if (user != null) {
+            if (password == user.getPassword()) {
+                return user;
+            }
+        }
+        return null;
+    }
+
+    public synchronized boolean addNewUser(String username, String password) {
+        System.out.println("Adding new user");
+        if (users.get(username) != null) {
+            System.out.println("User already exists");
+            return false;
+        }
+        User newUser = new User(username, password);
+        users.put(username, newUser);
+        System.out.println("New user added");
+        return true;
     }
 
     public static void main(String[] args) {

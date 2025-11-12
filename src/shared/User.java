@@ -6,6 +6,12 @@ public class User {
 
     private boolean online;
 
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
+        this.online = false;
+    }
+
     public String getUsername() {
         return username;
     }

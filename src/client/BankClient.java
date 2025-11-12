@@ -20,7 +20,7 @@ public class BankClient {
     public static void main(String[] args) {
         BankClient client = new BankClient();
         try {
-            client.connect("localhost", 8080);
+            client.connect("localhost", 9000);
             client.login();
 
             client.showMenu();
