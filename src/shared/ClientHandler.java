@@ -59,6 +59,26 @@ public class ClientHandler implements Runnable {
             e.printStackTrace();
         }
     }
+
+//    private Message handleDeposit(String payload) {
+//        String[] splitPayload = payload.split(":");
+//        if (splitPayload.length != 2) {
+//            return new Message(MessageType.FAILED, "Could not recognise message");
+//        }
+//
+//        float amount = 0f;
+//        try {
+//            amount = Float.parseFloat(splitPayload[0]);
+//        } catch (NumberFormatException e) {
+//            return new Message(MessageType.FAILED, "Amount must be an int.");
+//        }
+//        if (amount <= 0) {
+//            return new Message(MessageType.FAILED, "Amount must be greater than £0");
+//        }
+//
+//
+//    }
+
     private Message routeMessage(Message message) {
         MessageType type = message.getType();
         String payload = message.getPayload();

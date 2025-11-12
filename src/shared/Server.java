@@ -8,7 +8,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server implements Runnable {
-    private HashMap<String, Account> accounts;
     private HashMap<String, User> users;
     private ServerSocket serverSocket;
     private int interestPeriod;
@@ -18,15 +17,10 @@ public class Server implements Runnable {
     private int port;
 
     public Server(int port, int threadCount) throws IOException {
-        this.accounts = new HashMap<>();
         this.users = new HashMap<>();
         this.serverSocket = new ServerSocket(port);
         this.threadPool = Executors.newFixedThreadPool(threadCount);
         this.ledger = new Ledger();
-    }
-
-    public void createLedgerMessage(Transaction transaction) {
-        ledger.addToLedger(transaction);
     }
 
 
@@ -67,6 +61,22 @@ public class Server implements Runnable {
         System.out.println("New user added");
         return true;
     }
+
+    public boolean transfer(Account sender, Account recipient, double amount) {
+        if (amount > sender.getBalance()) {
+            System.out.println("Amount is greater than the balance");
+            return false;
+        }
+
+        Transaction transaction = new Transaction(sender, recipient, amount, TransactionType.TRANSFER)
+        sender.deductBalance(amount);
+        recipient.addBalance(amount);
+        return true;
+    }
+
+//    public boolean deposit(Account recipient, double amount) {
+//        Transaction
+//    }
 
     public static void main(String[] args) {
         try {

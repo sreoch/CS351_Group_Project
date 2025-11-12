@@ -19,11 +19,11 @@ For the requests sent over a socket, the messageType determines what is to be do
 - CREATE_ACCOUNT
   - Message(MessageType.CREATE_ACCOUNT, "scott:passwordhere")
 - TRANSFER
-  - Message(MessageType.TRANSFER, "{recipientUserName:100}")
+  - Message(MessageType.TRANSFER, "{100:AccountThatBelongsToUser:recipientUserName:AccountThatBelongsToRecipient}")
 - DEPOSIT
-  - Message(MessageType.DEPOSIT, "100")
+  - Message(MessageType.DEPOSIT, "100:AccountThatBelongsToUser")
 - WITHDRAW
-  - Message(MessageType.WITHDRAW, "100")
+  - Message(MessageType.WITHDRAW, "100":AccountThatBelongsToUser)
 - VIEW_TRANSACTIONS
   - Message(MessageType.VIEW_TRANSACTIONS)
 - LOGOUT
