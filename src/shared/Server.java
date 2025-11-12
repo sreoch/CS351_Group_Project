@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server implements Runnable {
-    private HashMap<String, User> users;
+    private HashMap<String, Account> accounts;
     private ServerSocket serverSocket;
     private int interestPeriod;
     private float interestRate;
@@ -17,7 +17,7 @@ public class Server implements Runnable {
     private int port;
 
     public Server(int port, int threadCount) throws IOException {
-        this.users = new HashMap<>();
+        this.accounts = new HashMap<>();
         this.serverSocket = new ServerSocket(port);
         this.threadPool = Executors.newFixedThreadPool(threadCount);
         this.ledger = new Ledger();
@@ -38,26 +38,26 @@ public class Server implements Runnable {
         }
     }
 
-    public User authenticateUser(String username, String password) {
-        User user = users.get(username);
-        if (user != null) {
-            if (user.checkPassword(password)) {
+    public Account authenticateAccount(String username, String password) {
+        Account account = accounts.get(username);
+        if (account != null) {
+            if (account.checkPassword(password)) {
                 System.out.println("User is authenticated");
-                return user;
+                return account;
             }
             return null;
         }
         return null;
     }
 
-    public synchronized boolean addNewUser(String username, String password) {
+    public synchronized boolean addNewAccount(String username, String password) {
         System.out.println("Adding new user");
-        if (users.get(username) != null) {
+        if (accounts.get(username) != null) {
             System.out.println("User already exists");
             return false;
         }
-        User newUser = new User(username, password);
-        users.put(username, newUser);
+        Account newAccount = new Account(username, password);
+        accounts.put(username, newAccount);
         System.out.println("New user added");
         return true;
     }
@@ -68,15 +68,17 @@ public class Server implements Runnable {
             return false;
         }
 
-        Transaction transaction = new Transaction(sender, recipient, amount, TransactionType.TRANSFER)
+        Transaction transaction = new Transaction(sender, recipient, amount, TransactionType.TRANSFER);
         sender.deductBalance(amount);
         recipient.addBalance(amount);
         return true;
     }
 
-//    public boolean deposit(Account recipient, double amount) {
-//        Transaction
-//    }
+    public boolean deposit(Account recipient, double amount) {
+        Transaction transaction = new Transaction(null, recipient, amount, TransactionType.DEPOSIT);
+        ledger.addToLedger(transaction);
+        return true;
+    }
 
     public static void main(String[] args) {
         try {

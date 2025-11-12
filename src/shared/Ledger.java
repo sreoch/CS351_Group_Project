@@ -22,7 +22,7 @@ public class Ledger {
 
     public ArrayList<Transaction> getUserTransactions(String username) {
         Stream<Transaction> filteredTransactions = transactions.stream().filter(
-                transaction -> (transaction.getFromAccount().getUser().getUsername().equals(username) || transaction.getToAccount().getUser().getUsername().equals(username))
+                transaction -> (transaction.getFromAccount().getUsername().equals(username) || transaction.getToAccount().getUsername().equals(username))
         );
 
         return new ArrayList<Transaction>(filteredTransactions.collect(Collectors.toList()));

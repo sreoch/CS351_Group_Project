@@ -8,7 +8,7 @@ import java.net.Socket;
 public class ClientHandler implements Runnable {
     private Socket socket;
     private Server server;
-    private User user;
+    private Account account;
 
     public ClientHandler(Socket socket, Server server) {
         System.out.println("Initialising client handler");
@@ -21,10 +21,10 @@ public class ClientHandler implements Runnable {
         if (splitPayload.length != 2) {
             return new Message(MessageType.LOGIN_FAILED, "Message payload not in correct form.");
         }
-        User user = server.authenticateUser(splitPayload[0], splitPayload[1]);
-        if (user != null) {
-            user.setOnline(true);
-            this.user = user;
+        Account account = server.authenticateAccount(splitPayload[0], splitPayload[1]);
+        if (account != null) {
+            account.setOnline(true);
+            this.account = account;
             return new Message(MessageType.LOGIN_SUCCESS, "Login Successfull");
         }
         return new Message(MessageType.LOGIN_FAILED, "Login failed. Invalid Credentials");
@@ -38,7 +38,7 @@ public class ClientHandler implements Runnable {
             return new Message(MessageType.LOGIN_FAILED, "Message payload not in correct form.");
         }
         System.out.println("Attempting to add new user");
-        boolean result = server.addNewUser(splitPayload[0], splitPayload[1]);
+        boolean result = server.addNewAccount(splitPayload[0], splitPayload[1]);
         System.out.println("Added new user");
         if (result) {
             System.out.println("Success");
@@ -51,8 +51,8 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleLogout() {
-        System.out.println("User " + this.user.getUsername() + " is logging out");
-        user.setOnline(false);
+        System.out.println("User " + this.account.getUsername() + " is logging out");
+        account.setOnline(false);
         try {
             socket.close();
         } catch (IOException e) {
@@ -60,24 +60,29 @@ public class ClientHandler implements Runnable {
         }
     }
 
-//    private Message handleDeposit(String payload) {
-//        String[] splitPayload = payload.split(":");
-//        if (splitPayload.length != 2) {
-//            return new Message(MessageType.FAILED, "Could not recognise message");
-//        }
-//
-//        float amount = 0f;
-//        try {
-//            amount = Float.parseFloat(splitPayload[0]);
-//        } catch (NumberFormatException e) {
-//            return new Message(MessageType.FAILED, "Amount must be an int.");
-//        }
-//        if (amount <= 0) {
-//            return new Message(MessageType.FAILED, "Amount must be greater than £0");
-//        }
-//
-//
-//    }
+    private Message handleDeposit(String payload) {
+        String[] splitPayload = payload.split(":");
+        if (splitPayload.length != 1) {
+            return new Message(MessageType.FAILED, "Could not recognise message");
+        }
+
+        double amount = 0f;
+        try {
+            amount = Double.parseDouble(splitPayload[0]);
+        } catch (NumberFormatException e) {
+            return new Message(MessageType.FAILED, "Amount must be an int.");
+        }
+        if (amount <= 0) {
+            return new Message(MessageType.FAILED, "Amount must be greater than £0");
+        }
+
+        boolean result = server.deposit(account, amount);
+        if (result == true) {
+            return new Message(MessageType.SUCCESS, "Successfully deposited");
+        } else {
+            return new Message(MessageType.FAILED, "An error occured while making deposit");
+        }
+    }
 
     private Message routeMessage(Message message) {
         MessageType type = message.getType();
@@ -89,6 +94,8 @@ public class ClientHandler implements Runnable {
                 return handleLoginPayload(message.getPayload());
             case MessageType.CREATE_ACCOUNT:
                 return handleCreateAccountPayload(message.getPayload());
+            case MessageType.DEPOSIT:
+                return handleDeposit(message.getPayload());
         }
         System.out.println("Default");
         return new Message(MessageType.FAILED, "Message Type not recognised");
