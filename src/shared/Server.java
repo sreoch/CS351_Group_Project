@@ -47,9 +47,11 @@ public class Server implements Runnable {
     public User authenticateUser(String username, String password) {
         User user = users.get(username);
         if (user != null) {
-            if (password == user.getPassword()) {
+            if (user.checkPassword(password)) {
+                System.out.println("User is authenticated");
                 return user;
             }
+            return null;
         }
         return null;
     }

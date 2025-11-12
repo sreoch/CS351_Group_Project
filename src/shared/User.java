@@ -35,4 +35,8 @@ public class User {
     public void setOnline(boolean online) {
         this.online = online;
     }
+
+    public boolean checkPassword(String password) {
+        return password.equals(this.password);
+    }
 }
