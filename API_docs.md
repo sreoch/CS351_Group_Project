@@ -28,7 +28,8 @@ For the requests sent over a socket, the messageType determines what is to be do
     - Message(MessageType.SUCCESS, "Account successfully created");
     - Message(MessageType.FAILED, "Could not create account. User may already exist.")
 - TRANSFER
-  - Requst: Message(MessageType.TRANSFER, "{100:AccountThatBelongsToUser:recipientUserName:AccountThatBelongsToRecipient}")
+  - Example Request:
+    - Message(MessageType.TRANSFER, "100:recipientUserName")
 - DEPOSIT
   - Example Request:
     - Message(MessageType.DEPOSIT, "100:AccountThatBelongsToUser")
@@ -39,7 +40,10 @@ For the requests sent over a socket, the messageType determines what is to be do
 - WITHDRAW
   - Requst: Message(MessageType.WITHDRAW, "100":AccountThatBelongsToUser)
 - VIEW_TRANSACTIONS
-  - Requst: Message(MessageType.VIEW_TRANSACTIONS)
+  - Example Requst:
+    - Message(MessageType.VIEW_TRANSACTIONS)
+  - Example Response:
+    - Message(MessageType.SUCCESS, "")
 - LOGOUT
   - Requst: Message(MessageType.LOGOUT)
 

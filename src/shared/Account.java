@@ -66,4 +66,9 @@ public class Account implements Serializable {
     public boolean checkPassword(String password) {
         return password.equals(this.password);
     }
+
+    @Override
+    public String toString() {
+        return this.username;
+    }
 }

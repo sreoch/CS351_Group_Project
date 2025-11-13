@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.SocketException;
+import java.util.ArrayList;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
@@ -83,10 +85,65 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private Message handleViewTransactions() {
+        Ledger ledger = server.getLedger();
+        ArrayList<Transaction> transactions = ledger.getAccountTransactions(account);
+        String transactionsString = "";
+        for (Transaction transaction : transactions) {
+            try {
+                transactionsString = transactionsString + "\n" + transaction.toString();
+            } catch (Exception e) {
+                System.out.println("Error!!: " + e.toString());
+            }
+
+        }
+        return new Message(MessageType.SUCCESS, transactionsString);
+    }
+
+    private Message handleWithdraw(String payload) {
+        double amount;
+        try {
+            amount = Double.parseDouble(payload);
+        } catch (NumberFormatException e) {
+            return new Message(MessageType.FAILED, "Amount must be a valid number");
+        }
+
+        if (amount > account.getBalance()) {
+            return new Message(MessageType.FAILED, "Insufficient funds.");
+        }
+
+        boolean result = server.withdraw(account, amount);
+        if (result == true) {
+            return new Message(MessageType.SUCCESS, "Withdraw successful");
+        }
+        return new Message(MessageType.FAILED, "There was an error while withdrawing funds.");
+    }
+
+    private Message handleTransfer(String payload) {
+        String[] splitPayload = payload.split(":");
+        if (splitPayload.length != 2) {
+            return new Message(MessageType.FAILED, "Unable to recognise message");
+        }
+
+        try {
+            double amount = Double.parseDouble(splitPayload[1]);
+            Account recipient = server.getAccount(splitPayload[0]);
+            if (recipient == null) {
+                return new Message(MessageType.FAILED, "Could not find recipient account");
+            }
+            boolean result = server.transfer(account, recipient, amount);
+            if (result == false) {
+                return new Message(MessageType.FAILED, "There was an error while transferring");
+            }
+            return new Message(MessageType.SUCCESS, "Successfully transfered");
+        } catch (NumberFormatException e) {
+            return new Message(MessageType.FAILED, "Amount must be a valid number");
+        }
+    }
+
     private Message routeMessage(Message message) {
         MessageType type = message.getType();
         String payload = message.getPayload();
-        System.out.println("Handling message");
         switch (type) {
             case MessageType.LOGIN:
                 return handleLoginPayload(message.getPayload());
@@ -94,6 +151,12 @@ public class ClientHandler implements Runnable {
                 return handleCreateAccountPayload(message.getPayload());
             case MessageType.DEPOSIT:
                 return handleDeposit(message.getPayload());
+            case MessageType.VIEW_TRANSACTIONS:
+                return handleViewTransactions();
+            case MessageType.WITHDRAW:
+                return handleWithdraw(message.getPayload());
+            case MessageType.TRANSFER:
+                return handleTransfer(message.getPayload());
         }
         System.out.println("Default");
         return new Message(MessageType.FAILED, "Message Type not recognised");
@@ -108,12 +171,19 @@ public class ClientHandler implements Runnable {
             try {
                 while (true) {
                     System.out.println("Listening for an object");
-                    Message message = (Message) input.readObject();
-                    System.out.println("Recieved message: " + message.getPayload());
-                    Message reply = routeMessage(message);
-                    System.out.println("Sending reply: " + reply.getPayload());
-                    output.writeObject(reply);
-                    output.flush();
+                    try {
+                        Message message = (Message) input.readObject();
+                        System.out.println("Recieved message: " + message.getPayload());
+                        Message reply = routeMessage(message);
+                        System.out.println("Sending reply: " + reply.getPayload());
+                        output.writeObject(reply);
+                        output.flush();
+                    } catch (SocketException e) {
+                        System.out.println("Client Disconnected");
+                        break;
+                    }
+
+
                 }
 
 

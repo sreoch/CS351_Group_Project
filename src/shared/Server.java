@@ -3,6 +3,7 @@ package shared;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,6 +63,10 @@ public class Server implements Runnable {
         return true;
     }
 
+    public Account getAccount(String username) {
+        return accounts.get(username);
+    }
+
     public boolean transfer(Account sender, Account recipient, double amount) {
         if (amount > sender.getBalance()) {
             System.out.println("Amount is greater than the balance");
@@ -69,6 +74,7 @@ public class Server implements Runnable {
         }
 
         Transaction transaction = new Transaction(sender, recipient, amount, TransactionType.TRANSFER);
+        ledger.addToLedger(transaction);
         sender.deductBalance(amount);
         recipient.addBalance(amount);
         return true;
@@ -76,6 +82,17 @@ public class Server implements Runnable {
 
     public boolean deposit(Account recipient, double amount) {
         Transaction transaction = new Transaction(null, recipient, amount, TransactionType.DEPOSIT);
+        recipient.addBalance(amount);
+        ledger.addToLedger(transaction);
+        return true;
+    }
+
+    public boolean withdraw(Account source, double amount) {
+        Transaction transaction = new Transaction(source, null, amount, TransactionType.WITHDRAW);
+        if (amount > source.getBalance()) {
+            return false;
+        }
+        source.deductBalance(amount);
         ledger.addToLedger(transaction);
         return true;
     }
@@ -87,5 +104,9 @@ public class Server implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public Ledger getLedger() {
+        return ledger;
     }
 }

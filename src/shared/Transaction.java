@@ -41,6 +41,8 @@ public class Transaction implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("[%s] %s -> %s: £%.2f (%s)", timestamp, fromAccount, toAccount, amount, type);
+        String fromAccountString = fromAccount != null ? fromAccount.toString() : "null";
+        String toAccountString = toAccount != null ? toAccount.toString() : "null";
+        return String.format("[%s] %s -> %s: £%.2f (%s)", timestamp, fromAccountString, toAccountString, amount, type);
     }
 }
