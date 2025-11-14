@@ -1,3 +1,5 @@
+package tests;
+
 import org.junit.jupiter.api.Test;
 import shared.Transaction;
 import shared.TransactionType;

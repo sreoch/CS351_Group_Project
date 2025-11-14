@@ -59,6 +59,8 @@ public class BankClient {
 
         if (response.getType() == MessageType.LOGIN_SUCCESS) {
             System.out.println("Success! Balance: £" + response.getPayload());
+        } else if (response.getType() == MessageType.ACCOUNT_CREATED || response.getType() == MessageType.SUCCESS) {
+            System.out.println("✓ Account created! Balance: £" +  response.getPayload());
         } else {
             System.out.println("x " + response.getPayload());
             System.exit(0);

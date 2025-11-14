@@ -27,7 +27,7 @@ public class ClientHandler implements Runnable {
         if (account != null) {
             account.setOnline(true);
             this.account = account;
-            return new Message(MessageType.LOGIN_SUCCESS, "Login Successfull");
+            return new Message(MessageType.LOGIN_SUCCESS, String.valueOf(account.getBalance()));
         }
         return new Message(MessageType.LOGIN_FAILED, "Login failed. Invalid Credentials");
     }
@@ -41,9 +41,14 @@ public class ClientHandler implements Runnable {
         System.out.println("Attempting to add new user");
         boolean result = server.addNewAccount(splitPayload[0], splitPayload[1]);
         System.out.println("Added new user");
+
         if (result) {
             System.out.println("Success");
-            return new Message(MessageType.SUCCESS, "Account successfully created");
+            Account newAccount = server.authenticateAccount(splitPayload[0], splitPayload[1]);
+            this.account = newAccount;
+            newAccount.setOnline(true);
+
+            return new Message(MessageType.ACCOUNT_CREATED, String.valueOf(newAccount.getBalance()));
         }
         else {
             System.out.println("failed");
@@ -113,7 +118,7 @@ public class ClientHandler implements Runnable {
         }
 
         boolean result = server.withdraw(account, amount);
-        if (result == true) {
+        if (result) {
             return new Message(MessageType.SUCCESS, "Withdraw successful");
         }
         return new Message(MessageType.FAILED, "There was an error while withdrawing funds.");
@@ -132,7 +137,7 @@ public class ClientHandler implements Runnable {
                 return new Message(MessageType.FAILED, "Could not find recipient account");
             }
             boolean result = server.transfer(account, recipient, amount);
-            if (result == false) {
+            if (!result) {
                 return new Message(MessageType.FAILED, "There was an error while transferring");
             }
             return new Message(MessageType.SUCCESS, "Successfully transfered");
