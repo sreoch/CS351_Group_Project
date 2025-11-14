@@ -3,18 +3,17 @@ package shared;
 import java.io.Serializable;
 
 public class Account implements Serializable {
+    private String id;
     private String username;
-    private String passwordHash;
+    private String password;
+    private boolean online;
     private double balance;
 
     public Account(String username, String password) {
-        this.username = username;
-        this.passwordHash = password; //TODO: need to hash properly
         this.balance = 1000.0; // the starting balance is always 1000
-    }
-
-    public String getUsername() {
-        return username;
+        this.username = username;
+        this.password = password;
+        this.online = false;
     }
 
     public double getBalance() {
@@ -40,7 +39,36 @@ public class Account implements Serializable {
         return false;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public boolean isOnline() {
+        return online;
+    }
+
+    public void setOnline(boolean online) {
+        this.online = online;
+    }
+
     public boolean checkPassword(String password) {
-        return this.passwordHash.equals(password);
+        return password.equals(this.password);
+    }
+
+    @Override
+    public String toString() {
+        return this.username;
     }
 }

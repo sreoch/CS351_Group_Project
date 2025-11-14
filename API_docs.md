@@ -15,19 +15,37 @@ For the requests sent over a socket, the messageType determines what is to be do
 ### Example Requests
 
 - LOGIN
-  - Message(MessageType.LOGIN, "{'username': 'scott', 'password': 'passwordhere'}")
+  - Example Request: 
+    - Message(MessageType.LOGIN, "scott:passwordhere")
+  - Example Responses: 
+    - Message(MessageType.LOGIN_SUCCESS, "Login Successfull")
+    - Message(MessageType.LOGIN_FAILED, "Login failed. Invalid Credentials")
+    - Message(MessageType.LOGIN_FAILED, "Message payload not in correct form.");
 - CREATE_ACCOUNT
-  - Message(MessageType.CREATE_ACCOUNT, "{'username': 'scott', 'password': 'passwordhere'}")
+  - Example Requst: 
+    - Message(MessageType.CREATE_ACCOUNT, "scott:passwordhere")
+  - Example Responses:
+    - Message(MessageType.SUCCESS, "Account successfully created");
+    - Message(MessageType.FAILED, "Could not create account. User may already exist.")
 - TRANSFER
-  - Message(MessageType.TRANSFER, "{'recipient': 'recipientUserName', 'amount': 100}")
+  - Example Request:
+    - Message(MessageType.TRANSFER, "100:recipientUserName")
 - DEPOSIT
-  - Message(MessageType.DEPOSIT, "{'amount': 100}")
+  - Example Request:
+    - Message(MessageType.DEPOSIT, "100:AccountThatBelongsToUser")
+  - Example Response:
+    - Message(MessageType.SUCCESS, "Successfully deposited")
+    - Message(MessageType.FAILED, "Amount must be greater than £0")
+    - Message(MessageType.FAILED, "Amount must be a double.")
 - WITHDRAW
-  - Message(MessageType.WITHDRAW, "{'amount': 100}")
+  - Requst: Message(MessageType.WITHDRAW, "100":AccountThatBelongsToUser)
 - VIEW_TRANSACTIONS
-  - Message(MessageType.VIEW_TRANSACTIONS)
+  - Example Requst:
+    - Message(MessageType.VIEW_TRANSACTIONS)
+  - Example Response:
+    - Message(MessageType.SUCCESS, "")
 - LOGOUT
-  - Message(MessageType.LOGOUT)
+  - Requst: Message(MessageType.LOGOUT)
 
 ## Request Types Server -> client
 
@@ -44,13 +62,13 @@ For the requests sent over a socket, the messageType determines what is to be do
 - LOGIN_SUCCESS
   - Message(MessageType.LOGIN_SUCCESS)
 - LOGIN_FAILED
-  - Message(MessageType.LOGIN_FAILED, "{'message': 'Login Failed Invalid Credentials'}")
+  - Message(MessageType.LOGIN_FAILED, "Login Failed Invalid Credentials")
 - SUCCESS
-  - Message(MessageType.SUCCESS, "{'message': 'Transfer of £100 to recipientUserName successful'}")
+  - Message(MessageType.SUCCESS, "Transfer of £100 to recipientUserName successful")
 - FAILED
-  - Message(MessageType.FAILED, "{'message': 'Transfer of £100 to recipientUserName failed. User recipientUserName not found.'}")
+  - Message(MessageType.FAILED, "Transfer of £100 to recipientUserName failed. User recipientUserName not found.")
 - BALANCE_UPDATE
-  - Message(MessageType.BALANCE_UPDATE, "{balance: 2000}")
+  - Message(MessageType.BALANCE_UPDATE, "UserAccount2:2000")
 - TRANSACTION_LIST
   - Message(MessageType.TRANSACTION_LIST, "{transactions: [{'from': 'user1', 'to': 'user2', 'amount': 100}, {'from': 'user3', to: 'user1', amount: 50}]}")
 - CONNECTION_TIMEOUT
