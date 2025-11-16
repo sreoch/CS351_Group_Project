@@ -22,7 +22,9 @@ public class TransactionLedger implements Serializable {
     public synchronized List<Transaction> getAllTransactionsForUser(String username) {
         List<Transaction> userTransactions = new ArrayList<>();
         for (Transaction t : transactions) {
-            if (username.equals(t.getFromAccount()) || username.equals(t.getToAccount())) {
+            if (t.getFromAccount() != null && t.getFromAccount().getUsername().equals(username)) {
+                userTransactions.add(t);
+            } else if (t.getToAccount() != null && t.getToAccount().getUsername().equals(username)) {
                 userTransactions.add(t);
             }
         }

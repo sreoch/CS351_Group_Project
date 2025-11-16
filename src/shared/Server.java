@@ -14,16 +14,18 @@ public class Server implements Runnable {
     private int interestPeriod;
     private float interestRate;
     private ExecutorService threadPool;
-    private Ledger ledger;
+    private TransactionLedger ledger;
     private int port;
 
     public Server(int port, int threadCount) throws IOException {
         this.accounts = new HashMap<>();
         this.serverSocket = new ServerSocket(port);
         this.threadPool = Executors.newFixedThreadPool(threadCount);
-        this.ledger = new Ledger();
+        this.ledger = new TransactionLedger();
     }
-
+    public TransactionLedger getLedger() {
+        return ledger;
+    }
 
     @Override
     public void run() {
@@ -74,7 +76,7 @@ public class Server implements Runnable {
         }
 
         Transaction transaction = new Transaction(sender, recipient, amount, TransactionType.TRANSFER);
-        ledger.addToLedger(transaction);
+        ledger.addTransaction(transaction);
         sender.deductBalance(amount);
         recipient.addBalance(amount);
         return true;
@@ -83,7 +85,7 @@ public class Server implements Runnable {
     public boolean deposit(Account recipient, double amount) {
         Transaction transaction = new Transaction(null, recipient, amount, TransactionType.DEPOSIT);
         recipient.addBalance(amount);
-        ledger.addToLedger(transaction);
+        ledger.addTransaction(transaction);
         return true;
     }
 
@@ -93,7 +95,7 @@ public class Server implements Runnable {
             return false;
         }
         source.deductBalance(amount);
-        ledger.addToLedger(transaction);
+        ledger.addTransaction(transaction);
         return true;
     }
 
@@ -104,9 +106,5 @@ public class Server implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public Ledger getLedger() {
-        return ledger;
     }
 }
