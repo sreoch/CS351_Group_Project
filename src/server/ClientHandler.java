@@ -51,14 +51,13 @@ public class ClientHandler implements Runnable {
             newAccount.setOnline(true);
 
             return new Message(MessageType.ACCOUNT_CREATED, String.valueOf(newAccount.getBalance()));
-        }
-        else {
+        } else {
             System.out.println("failed");
             return new Message(MessageType.FAILED, "Could not create account. User may already exist.");
         }
     }
 
-    private void handleLogout() {
+    private Message handleLogout(String payload) {
         System.out.println("User " + this.account.getUsername() + " is logging out");
         account.setOnline(false);
         try {
@@ -66,6 +65,7 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return new Message(MessageType.SUCCESS, "Logged out successfully");
     }
 
     private Message handleDeposit(String payload) {
@@ -151,7 +151,7 @@ public class ClientHandler implements Runnable {
     private Message routeMessage(Message message) {
         MessageType type = message.getType();
         String payload = message.getPayload();
-        switch (type) {
+        switch (message.getType()) {
             case MessageType.LOGIN:
                 return handleLoginPayload(message.getPayload());
             case MessageType.CREATE_ACCOUNT:
@@ -164,6 +164,8 @@ public class ClientHandler implements Runnable {
                 return handleWithdraw(message.getPayload());
             case MessageType.TRANSFER:
                 return handleTransfer(message.getPayload());
+            case MessageType.LOGOUT:
+                return handleLogout(message.getPayload());
         }
         System.out.println("Default");
         return new Message(MessageType.FAILED, "Message Type not recognised");
@@ -171,39 +173,33 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-        try {
-            ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-            ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+        try (ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+             ObjectInputStream input = new ObjectInputStream(socket.getInputStream())) {
 
-            try {
-                while (true) {
-                    System.out.println("Listening for an object");
-                    try {
-                        Message message = (Message) input.readObject();
-                        System.out.println("Recieved message: " + message.getPayload());
-                        Message reply = routeMessage(message);
-                        System.out.println("Sending reply: " + reply.getPayload());
-                        output.writeObject(reply);
-                        output.flush();
-                    } catch (SocketException e) {
-                        System.out.println("Client Disconnected");
-                        break;
-                    }
-
-
+            while (true) {
+                System.out.println("Listening for an object");
+                try {
+                    Message message = (Message) input.readObject();
+                    System.out.println("Recieved message: " + message.getPayload());
+                    Message reply = routeMessage(message);
+                    System.out.println("Sending reply: " + reply.getPayload());
+                    output.writeObject(reply);
+                    output.flush();
+                } catch (SocketException e) {
+                    System.out.println("Client Disconnected");
+                    break;
+                } catch (ClassNotFoundException e) {
+                    Message reply = new Message(MessageType.FAILED, "Could not recognise message");
+                    output.writeObject(reply);
+                    output.flush();
                 }
-
-
-            } catch (ClassNotFoundException e) {
-                Message reply = new Message(MessageType.FAILED, "Could not recognise message");
-                output.writeObject(reply);
-                output.flush();
             }
-
-
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (account != null) {
+                account.setOnline(false);
+            }
         }
-
     }
 }

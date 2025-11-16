@@ -10,7 +10,7 @@ public class Account implements Serializable {
     private double balance;
 
     public Account(String username, String password) {
-        this.balance = 1000.0; // the starting balance is always 1000
+        this.balance = Constants.STARTING_BALANCE; // the starting balance is always 1000
         this.username = username;
         this.password = password;
         this.online = false;
