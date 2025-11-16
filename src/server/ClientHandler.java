@@ -1,11 +1,13 @@
-package shared;
+package server;
+
+import shared.*;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
+import java.util.List;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
@@ -91,8 +93,8 @@ public class ClientHandler implements Runnable {
     }
 
     private Message handleViewTransactions() {
-        Ledger ledger = server.getLedger();
-        ArrayList<Transaction> transactions = ledger.getAccountTransactions(account);
+        TransactionLedger ledger = server.getLedger();
+        List<Transaction> transactions = ledger.getAllTransactionsForUser(account.getUsername());
         String transactionsString = "";
         for (Transaction transaction : transactions) {
             try {
