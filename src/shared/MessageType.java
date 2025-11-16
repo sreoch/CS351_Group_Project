@@ -14,10 +14,12 @@ public enum MessageType {
 //    Message types for Server -> Client
     LOGIN_SUCCESS,
     LOGIN_FAILED,
+    ACCOUNT_CREATED,
     SUCCESS,
     FAILED,
     BALANCE_UPDATE,
     TRANSACTION_LIST,
     CONNECTION_TIMEOUT
+
 
 }
