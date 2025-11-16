@@ -9,6 +9,7 @@ public class Account implements Serializable {
 
     public Account(User user) {
         this.balance = 1000.0; // the starting balance is always 1000
+        this.user = user;
     }
 
     public double getBalance() {
