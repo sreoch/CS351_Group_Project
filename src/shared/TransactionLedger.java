@@ -30,4 +30,17 @@ public class TransactionLedger implements Serializable {
         }
         return userTransactions;
     }
+
+    public Transaction getLastInterestTransaction(Account account) {
+        List<Transaction> transactions = getAllTransactionsForUser(account.getUsername());
+        transactions.sort((a, b) -> {
+            return -1 * a.compareTo(b);
+        });
+        for (int i = transactions.size() - 1; i >= 0; i--) {
+            if (transactions.get(i).getType() == TransactionType.INTEREST) {
+                return transactions.get(i);
+            }
+        }
+        return null;
+    }
 }

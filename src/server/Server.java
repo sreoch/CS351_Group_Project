@@ -5,17 +5,18 @@ import shared.*;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class Server implements Runnable {
     private ConcurrentHashMap<String, Account> accounts;
     private ServerSocket serverSocket;
     private int interestPeriod;
-    private float interestRate;
+    private double interestRate;
     private ExecutorService threadPool;
+    private ScheduledExecutorService scheduledThreadPool;
+    private InterestThread interestThread;
     private TransactionLedger ledger;
     private int port;
 
@@ -23,6 +24,10 @@ public class Server implements Runnable {
         this.accounts = new ConcurrentHashMap<>();
         this.serverSocket = new ServerSocket(port);
         this.threadPool = Executors.newFixedThreadPool(threadCount);
+        this.scheduledThreadPool = Executors.newScheduledThreadPool(1);
+        this.interestRate = Constants.DEFAULT_INTEREST_RATE;
+        this.interestPeriod = Constants.DEFAULT_INTEREST_PERIOD_SECONDS;
+        this.interestThread = new InterestThread(this, interestRate, interestPeriod);
         this.ledger = new TransactionLedger();
     }
     public TransactionLedger getLedger() {
@@ -32,6 +37,8 @@ public class Server implements Runnable {
     @Override
     public void run() {
         System.out.println("Server running...");
+        System.out.println("Starting Interest Thread...");
+        scheduledThreadPool.scheduleAtFixedRate(interestThread, 0, interestPeriod, TimeUnit.SECONDS);
         while (true) {
             try {
                 Socket socket = serverSocket.accept();
@@ -71,6 +78,10 @@ public class Server implements Runnable {
         return accounts.get(username);
     }
 
+    public ConcurrentHashMap<String, Account> getAccounts() {
+        return this.accounts;
+    }
+
     public synchronized boolean transfer(Account sender, Account recipient, double amount) {
         if (amount > sender.getBalance()) {
             System.out.println("Amount is greater than the balance");
@@ -102,6 +113,22 @@ public class Server implements Runnable {
         Transaction transaction = new Transaction(source, null, amount, TransactionType.WITHDRAW);
         ledger.addTransaction(transaction);
         return true;
+    }
+
+    public void addInterest(Account account, double rate) {
+        double interest = Math.round(account.getBalance() * rate * 100d) / 100d;
+        Transaction interestTransaction = new Transaction(null, account, interest, TransactionType.INTEREST);
+        ledger.addTransaction(interestTransaction);
+        account.addBalance(interest);
+    }
+
+    public void updateInterestRate(double rate) {
+        this.interestRate = rate;
+        this.interestThread.setRate(rate);
+    }
+
+    public void updateInterestPeriod(int period) {
+        this.interestPeriod = period;
     }
 
     public static void main(String[] args) {
