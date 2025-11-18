@@ -13,11 +13,8 @@ import java.util.concurrent.Executors;
 public class Server implements Runnable {
     private ConcurrentHashMap<String, Account> accounts;
     private ServerSocket serverSocket;
-    private int interestPeriod;
-    private float interestRate;
     private ExecutorService threadPool;
     private TransactionLedger ledger;
-    private int port;
 
     public Server(int port, int threadCount) throws IOException {
         this.accounts = new ConcurrentHashMap<>();
@@ -85,14 +82,14 @@ public class Server implements Runnable {
         return true;
     }
 
-    public boolean deposit(Account recipient, double amount) {
+    public synchronized boolean deposit(Account recipient, double amount) {
         recipient.addBalance(amount);
         Transaction transaction = new Transaction(null, recipient, amount, TransactionType.DEPOSIT);
         ledger.addTransaction(transaction);
         return true;
     }
 
-    public boolean withdraw(Account source, double amount) {
+    public synchronized boolean withdraw(Account source, double amount) {
         if (amount > source.getBalance()) {
             return false;
         }
