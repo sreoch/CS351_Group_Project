@@ -63,5 +63,23 @@
 
 ## Week 2: 10th - 17th November 2025
 
+### Individual Contributions
+
+**Jack:**
+
+
+**Fraser:**
+
+
+**Scott:**
+- Added some code improvement for thread safety and code quality
+- synchronized the transfer method in the server to prevent race conditions
+- Improved the transaction validation flow in the ClientHandler a bit
+- Moved a lot of magic numbers into a constants file
+- Upgraded the ClientHandler to use try-with-resources for proper stream management
+- Created concurrent testing suite (ConcurrentServerTest.java)
+- Wrote a few tests in this suite to verify that we are handling thread safety properly
+
+**Collaborative Work:**
 ---
 
