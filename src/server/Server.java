@@ -1,35 +1,47 @@
-package shared;
+package server;
+
+import shared.*;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.Array;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class Server implements Runnable {
-    private HashMap<String, User> users;
+    private ConcurrentHashMap<String, Account> accounts;
     private ServerSocket serverSocket;
-    private int interestPeriod;
-    private float interestRate;
     private ExecutorService threadPool;
-    private Ledger ledger;
-    private int port;
+    private ScheduledExecutorService scheduledThreadPool;
+    private InterestThread interestThread;
+    private TransactionLedger ledger;
+    private double interestRate;
+    private int interestPeriod;
+    private ScheduledFuture<?> interestTask;
 
     public Server(int port, int threadCount) throws IOException {
-        this.users = new HashMap<>();
+        this.accounts = new ConcurrentHashMap<>();
         this.serverSocket = new ServerSocket(port);
         this.threadPool = Executors.newFixedThreadPool(threadCount);
-        this.ledger = new Ledger();
+        this.scheduledThreadPool = Executors.newScheduledThreadPool(1);
+        this.interestRate = Constants.DEFAULT_INTEREST_RATE;
+        this.interestPeriod = Constants.DEFAULT_INTEREST_PERIOD_SECONDS;
+        this.interestThread = new InterestThread(this, interestRate);
+        this.ledger = new TransactionLedger();
     }
-
+    public TransactionLedger getLedger() {
+        return ledger;
+    }
 
     @Override
     public void run() {
-        System.out.println("Server running...");
+        System.out.println("Server running on port " + serverSocket.getLocalPort());
+        System.out.println("Starting Interest Thread (rate: " + (interestRate * 100) + "%, period: " + interestPeriod + " seconds)...");
+
+        interestTask = scheduledThreadPool.scheduleAtFixedRate(interestThread, interestPeriod, interestPeriod, TimeUnit.SECONDS);
+
         while (true) {
             try {
                 Socket socket = serverSocket.accept();
@@ -41,18 +53,94 @@ public class Server implements Runnable {
         }
     }
 
-    public User authenticateUser(String username, String password) {
-        User user = users.get(username);
-        if (user != null) {
-            if (user.checkPassword(password)) {
+    public Account authenticateAccount(String username, String password) {
+        Account account = accounts.get(username);
+        if (account != null) {
+            if (account.checkPassword(password)) {
                 System.out.println("User is authenticated");
-                return user;
+                return account;
             }
             return null;
         }
         return null;
     }
 
+    public boolean addNewAccount(String username, String password) {
+        System.out.println("Adding new user");
+        Account newAccount = new Account(username, password);
+        Account existing = accounts.putIfAbsent(username, newAccount);
+        if (existing != null) {
+            System.out.println("User already exists");
+            return false;
+        }
+        System.out.println("New user added");
+        return true;
+    }
+
+    public Account getAccount(String username) {
+        return accounts.get(username);
+    }
+
+    public ConcurrentHashMap<String, Account> getAccounts() {
+        return this.accounts;
+    }
+
+    public synchronized boolean transfer(Account sender, Account recipient, double amount) {
+        if (amount > sender.getBalance()) {
+            System.out.println("Amount is greater than the balance");
+            return false;
+        }
+
+        sender.deductBalance(amount);
+        recipient.addBalance(amount);
+
+        Transaction transaction = new Transaction(sender, recipient, amount, TransactionType.TRANSFER);
+        ledger.addTransaction(transaction);
+        return true;
+    }
+
+    public synchronized boolean deposit(Account recipient, double amount) {
+        recipient.addBalance(amount);
+        Transaction transaction = new Transaction(null, recipient, amount, TransactionType.DEPOSIT);
+        ledger.addTransaction(transaction);
+        return true;
+    }
+
+    public synchronized boolean withdraw(Account source, double amount) {
+        if (amount > source.getBalance()) {
+            return false;
+        }
+
+        source.deductBalance(amount);
+
+        Transaction transaction = new Transaction(source, null, amount, TransactionType.WITHDRAW);
+        ledger.addTransaction(transaction);
+        return true;
+    }
+
+    public void addInterest(Account account, double rate) {
+        double interest = Math.round(account.getBalance() * rate * 100d) / 100d;
+        Transaction interestTransaction = new Transaction(null, account, interest, TransactionType.INTEREST);
+        ledger.addTransaction(interestTransaction);
+        account.addBalance(interest);
+    }
+
+    public void updateInterestRate(double rate) {
+        this.interestRate = rate;
+        this.interestThread.setRate(rate);
+    }
+
+    public void updateInterestPeriod(int period) {
+        this.interestPeriod = period;
+
+        if (interestTask != null) {
+            interestTask.cancel(false);
+        }
+
+        interestTask = scheduledThreadPool.scheduleAtFixedRate(interestThread, interestPeriod, interestPeriod, TimeUnit.SECONDS);
+
+        System.out.println("Interest period updated to " + period + " seconds");
+    }
     public void writeAccountsToFile(){
         String directory = System.getProperty("user.dir");
         directory = (directory + "/src/FileData/Accounts.ser");
@@ -62,12 +150,8 @@ public class Server implements Runnable {
         try {
             FileOutputStream outputStream = new FileOutputStream(directory);
             ObjectOutputStream objectStream = new ObjectOutputStream(outputStream);
-            for (User user : users.values()){
-                if (!user.getAccounts().isEmpty()){
-                    for(Account account : user.getAccounts()){
-                        objectStream.writeObject(account);
-                    }
-                }
+            for (Account acc : accounts.values()) {
+                objectStream.writeObject(acc);
             }
             objectStream.close();
         }
@@ -157,58 +241,13 @@ public class Server implements Runnable {
             }
         }
         objectStream.close();
-        for (Account account : accounts){
-            if (!users.containsValue(account.getUser())){
-                users.put(account.getUser().getUsername(), account.getUser());
-            }
-        }
+        accounts.addAll(accounts);
     }
 
-    public synchronized boolean addNewUser(String username, String password) {
-        System.out.println("Adding new user");
-        if (users.get(username) != null) {
-            System.out.println("User already exists");
-            return false;
-        }
-        User newUser = new User(username, password);
-        users.put(username, newUser);
-        System.out.println("New user added");
-        return true;
-    }
-
-    public boolean transfer(Account sender, Account recipient, double amount) {
-        if (amount > sender.getBalance()) {
-            System.out.println("Amount is greater than the balance");
-            return false;
-        }
-
-        Transaction transaction = new Transaction(sender, recipient, amount, TransactionType.TRANSFER);
-        sender.deductBalance(amount);
-        recipient.addBalance(amount);
-        return true;
-    }
-
-//    public boolean deposit(Account recipient, double amount) {
-//        Transaction
-//    }
 
     public static void main(String[] args) {
         try {
-            Server server = new Server(9000, 10);
-            User user1 = new User("Jack", "password1");
-            User user2 = new User("Fraser", "12345");
-            User user3 = new User("Scott", "CS351");
-
-            user1.addAccount(new Account(user1));
-            user2.addAccount(new Account(user2));
-            user3.addAccount(new Account(user3));
-
-            server.users.put(user1.getUsername(), user1);
-            server.users.put(user2.getUsername(), user2);
-            server.users.put(user3.getUsername(), user3);
-
-            server.writeAccountsToFile();
-            server.readAccountsFromFile();
+            Server server = new Server(Constants.DEFAULT_PORT, Constants.DEFAULT_THREAD_POOL_SIZE);
             server.run();
         } catch (IOException e) {
             e.printStackTrace();
