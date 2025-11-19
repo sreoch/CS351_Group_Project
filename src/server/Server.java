@@ -16,6 +16,9 @@ public class Server implements Runnable {
     private ScheduledExecutorService scheduledThreadPool;
     private InterestThread interestThread;
     private TransactionLedger ledger;
+    private double interestRate;
+    private int interestPeriod;
+    private ScheduledFuture<?> interestTask;
 
     public Server(int port, int threadCount) throws IOException {
         this.accounts = new ConcurrentHashMap<>();
@@ -24,7 +27,7 @@ public class Server implements Runnable {
         this.scheduledThreadPool = Executors.newScheduledThreadPool(1);
         this.interestRate = Constants.DEFAULT_INTEREST_RATE;
         this.interestPeriod = Constants.DEFAULT_INTEREST_PERIOD_SECONDS;
-        this.interestThread = new InterestThread(this, interestRate, interestPeriod);
+        this.interestThread = new InterestThread(this, interestRate);
         this.ledger = new TransactionLedger();
     }
     public TransactionLedger getLedger() {
@@ -33,9 +36,11 @@ public class Server implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Server running...");
-        System.out.println("Starting Interest Thread...");
-        scheduledThreadPool.scheduleAtFixedRate(interestThread, 0, interestPeriod, TimeUnit.SECONDS);
+        System.out.println("Server running on port " + serverSocket.getLocalPort());
+        System.out.println("Starting Interest Thread (rate: " + (interestRate * 100) + "%, period: " + interestPeriod + " seconds)...");
+
+        interestTask = scheduledThreadPool.scheduleAtFixedRate(interestThread, interestPeriod, interestPeriod, TimeUnit.SECONDS);
+
         while (true) {
             try {
                 Socket socket = serverSocket.accept();
@@ -126,6 +131,14 @@ public class Server implements Runnable {
 
     public void updateInterestPeriod(int period) {
         this.interestPeriod = period;
+
+        if (interestTask != null) {
+            interestTask.cancel(false);
+        }
+
+        interestTask = scheduledThreadPool.scheduleAtFixedRate(interestThread, interestPeriod, interestPeriod, TimeUnit.SECONDS);
+
+        System.out.println("Interest period updated to " + period + " seconds");
     }
 
     public static void main(String[] args) {

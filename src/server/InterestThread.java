@@ -1,22 +1,14 @@
 package server;
 
 import shared.Account;
-import java.util.ArrayList;
-import java.util.Collection;
 
 public class InterestThread implements Runnable {
-    private volatile Collection<Account> accounts;
     private volatile double rate;
     private Server server;
 
-    public InterestThread(Server server, double rate, int period) {
-        this.accounts = server.getAccounts().values();
+    public InterestThread(Server server, double rate) {
         this.server = server;
         this.rate = rate;
-    }
-
-    public void updateAccounts(Collection<Account> accounts) {
-        this.accounts = accounts;
     }
 
     public double getRate() {
@@ -29,9 +21,10 @@ public class InterestThread implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Adding interest");
-        for (Account account : this.accounts) {
+        System.out.println("Applying " + (rate * 100) + "% interest to all accounts...");
+        for (Account account : server.getAccounts().values()) {
             server.addInterest(account, rate);
         }
+        System.out.println("Interest applied successfully");
     }
 }
