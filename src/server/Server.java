@@ -30,7 +30,18 @@ public class Server implements Runnable {
         this.interestPeriod = Constants.DEFAULT_INTEREST_PERIOD_SECONDS;
         this.interestThread = new InterestThread(this, interestRate);
         this.ledger = new TransactionLedger();
+
+        readAccountsFromFile();
+        readLedgerFromFile();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutting server down - saving data...");
+            writeAccountsToFile();
+            writeLedgerToFile();
+            System.out.println("Data saved successfully");
+        }));
     }
+
     public TransactionLedger getLedger() {
         return ledger;
     }
@@ -141,107 +152,90 @@ public class Server implements Runnable {
 
         System.out.println("Interest period updated to " + period + " seconds");
     }
-    public void writeAccountsToFile(){
-        String directory = System.getProperty("user.dir");
-        directory = (directory + "/src/FileData/Accounts.ser");
-        System.out.println("DIRECTORY " + directory);
 
-        System.out.println("serializing theData");
+    public void writeAccountsToFile() {
+        String directory = System.getProperty("user.dir") + "/data/Accounts.ser";
+        System.out.println("Writing accounts to: " + directory);
+
         try {
-            FileOutputStream outputStream = new FileOutputStream(directory);
-            ObjectOutputStream objectStream = new ObjectOutputStream(outputStream);
-            for (Account acc : accounts.values()) {
-                objectStream.writeObject(acc);
+            new File(System.getProperty("user.dir") + "/data").mkdirs();
+
+            try (FileOutputStream outputStream = new FileOutputStream(directory);
+                 ObjectOutputStream objectStream = new ObjectOutputStream(outputStream)) {
+                objectStream.writeObject(accounts);
+                System.out.println("Successfully wrote " + accounts.size() + " accounts to file");
             }
-            objectStream.close();
+        } catch (IOException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
         }
-        catch (Exception e) { e.printStackTrace(); }
     }
 
-    public void writeMessageToLedger(Message message){
-        String directory = System.getProperty("user.dir");
-        directory = (directory + "/src/FileData/Ledger.ser");
-        System.out.println("DIRECTORY " + directory);
+    public void readAccountsFromFile() {
+        String directory = System.getProperty("user.dir") + "/data/Accounts.ser";
+        System.out.println("Reading accounts from: " + directory);
 
-        System.out.println("serializing theData");
+        File file = new File(directory);
+        if (!file.exists()) {
+            System.out.println("No accounts file found - starting with empty accounts");
+            return;
+        }
+
+        try (FileInputStream inputStream = new FileInputStream(directory);
+             ObjectInputStream objectStream = new ObjectInputStream(inputStream)) {
+            ConcurrentHashMap<String, Account> loadedAccounts = (ConcurrentHashMap<String, Account>) objectStream.readObject();
+            this.accounts = loadedAccounts;
+            System.out.println("Successfully read " + accounts.size() + " accounts to file");
+        } catch (EOFException e) {
+            System.out.println("Accounts file is empty - starting with empty accounts");
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+    public void writeLedgerToFile() {
+        String directory = System.getProperty("user.dir") + "/data/Ledger.ser";
+        System.out.println("Writing ledger to: " + directory);
+
         try {
-            FileOutputStream outputStream = new FileOutputStream(directory);
-            ObjectOutputStream objectStream = new ObjectOutputStream(outputStream);
-            objectStream.writeObject(message);
-            objectStream.close();
+            new File(System.getProperty("user.dir") + "/data").mkdirs();
+
+            try (FileOutputStream outputStream = new FileOutputStream(directory);
+                 ObjectOutputStream objectStream = new ObjectOutputStream(outputStream)) {
+                objectStream.writeObject(ledger);
+                System.out.println("Successfully wrote ledger to file");
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
         }
-        catch (Exception e) { e.printStackTrace(); }
     }
 
-    public void readMessagesFromLedger() throws IOException {
-        String directory = System.getProperty("user.dir");
-        directory = (directory + "/src/FileData/Ledger.ser");
-        System.out.println("DIRECTORY " + directory);
+    public void readLedgerFromFile() {
+        String directory = System.getProperty("user.dir") + "/data/Ledger.ser";
+        System.out.println("Reading ledger from: " + directory);
 
-        System.out.println("deserializing theData");
-        FileInputStream inputStream = new FileInputStream(directory);
-        ObjectInputStream objectStream = new ObjectInputStream(inputStream);
-        Object object = new Object();
-        ArrayList<Message> messages = new ArrayList<>();
-        while (true){
-            try {
-                object = objectStream.readObject();
-                messages.add((Message)object);
-            }
-            catch (EOFException | FileNotFoundException e) {
-                break;
-            } catch (IOException e) {
-                objectStream.close();
-                throw new RuntimeException(e);
-            } catch (ClassNotFoundException e) {
-                objectStream.close();
-                throw new RuntimeException(e);
-            }
-        }
-        objectStream.close();
-        ArrayList<Message> orderedMessages = new ArrayList<>();
-
-        while (!messages.isEmpty()){
-            LocalDateTime minTime = LocalDateTime.now();
-            int minIndex = 0;
-            for (int i = 0; i < messages.size(); i++){
-                if (minTime.isAfter(messages.get(i).getTimeStamp())){
-                    minIndex = i;
-                    minTime = messages.get(i).getTimeStamp();
-                }
-            }
-            orderedMessages.add(messages.remove(minIndex));
+        File file = new File(directory);
+        if (!file.exists()) {
+            System.out.println("No ledger file found - starting with empty ledger");
+            return;
         }
 
-    }
-
-    public void readAccountsFromFile() throws IOException {
-        String directory = System.getProperty("user.dir");
-        directory = (directory + "/src/FileData/Accounts.ser");
-        System.out.println("DIRECTORY " + directory);
-
-        System.out.println("deserializing theData");
-        FileInputStream inputStream = new FileInputStream(directory);
-        ObjectInputStream objectStream = new ObjectInputStream(inputStream);
-        Object object = new Object();
-        ArrayList<Account> accounts = new ArrayList<>();
-        while (true){
-            try {
-                object = objectStream.readObject();
-                accounts.add((Account)object);
-            }
-            catch (EOFException | FileNotFoundException e) {
-                break;
-            } catch (IOException e) {
-                objectStream.close();
-                throw new RuntimeException(e);
-            } catch (ClassNotFoundException e) {
-                objectStream.close();
-                throw new RuntimeException(e);
-            }
+        try (
+                FileInputStream inputStream = new FileInputStream(directory);
+                ObjectInputStream objectStream = new ObjectInputStream(inputStream)) {
+            TransactionLedger loadedLedger = (TransactionLedger) objectStream.readObject();
+            this.ledger = loadedLedger;
+            System.out.println("Successfully read ledger from file");
+        } catch (EOFException e) {
+            System.out.println("Ledgers file is empty - starting with empty ledger");
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
         }
-        objectStream.close();
-        accounts.addAll(accounts);
     }
 
 
