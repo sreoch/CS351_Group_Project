@@ -148,71 +148,15 @@ public class Server implements Runnable {
 
         System.out.println("serializing theData");
         try {
-            FileOutputStream outputStream = new FileOutputStream(directory);
+            FileOutputStream outputStream = new FileOutputStream(directory, false);
             ObjectOutputStream objectStream = new ObjectOutputStream(outputStream);
             for (Account acc : accounts.values()) {
                 objectStream.writeObject(acc);
             }
             objectStream.close();
+            outputStream.close();
         }
         catch (Exception e) { e.printStackTrace(); }
-    }
-
-    public void writeMessageToLedger(Message message){
-        String directory = System.getProperty("user.dir");
-        directory = (directory + "/src/FileData/Ledger.ser");
-        System.out.println("DIRECTORY " + directory);
-
-        System.out.println("serializing theData");
-        try {
-            FileOutputStream outputStream = new FileOutputStream(directory);
-            ObjectOutputStream objectStream = new ObjectOutputStream(outputStream);
-            objectStream.writeObject(message);
-            objectStream.close();
-        }
-        catch (Exception e) { e.printStackTrace(); }
-    }
-
-    public void readMessagesFromLedger() throws IOException {
-        String directory = System.getProperty("user.dir");
-        directory = (directory + "/src/FileData/Ledger.ser");
-        System.out.println("DIRECTORY " + directory);
-
-        System.out.println("deserializing theData");
-        FileInputStream inputStream = new FileInputStream(directory);
-        ObjectInputStream objectStream = new ObjectInputStream(inputStream);
-        Object object = new Object();
-        ArrayList<Message> messages = new ArrayList<>();
-        while (true){
-            try {
-                object = objectStream.readObject();
-                messages.add((Message)object);
-            }
-            catch (EOFException | FileNotFoundException e) {
-                break;
-            } catch (IOException e) {
-                objectStream.close();
-                throw new RuntimeException(e);
-            } catch (ClassNotFoundException e) {
-                objectStream.close();
-                throw new RuntimeException(e);
-            }
-        }
-        objectStream.close();
-        ArrayList<Message> orderedMessages = new ArrayList<>();
-
-        while (!messages.isEmpty()){
-            LocalDateTime minTime = LocalDateTime.now();
-            int minIndex = 0;
-            for (int i = 0; i < messages.size(); i++){
-                if (minTime.isAfter(messages.get(i).getTimeStamp())){
-                    minIndex = i;
-                    minTime = messages.get(i).getTimeStamp();
-                }
-            }
-            orderedMessages.add(messages.remove(minIndex));
-        }
-
     }
 
     public void readAccountsFromFile() throws IOException {
@@ -224,11 +168,58 @@ public class Server implements Runnable {
         FileInputStream inputStream = new FileInputStream(directory);
         ObjectInputStream objectStream = new ObjectInputStream(inputStream);
         Object object = new Object();
-        ArrayList<Account> accounts = new ArrayList<>();
+        while (true) {
+            try {
+                object = objectStream.readObject();
+                if (!accounts.containsKey(((Account)object).getUsername())){
+                    accounts.put(((Account)object).getUsername(), (Account) object);
+                }
+            } catch (EOFException | FileNotFoundException e) {
+                break;
+            } catch (IOException e) {
+                objectStream.close();
+                throw new RuntimeException(e);
+            } catch (ClassNotFoundException e) {
+                objectStream.close();
+                throw new RuntimeException(e);
+            }
+        }
+        objectStream.close();
+        inputStream.close();
+    }
+
+    public void writeTransactionsToFile(TransactionLedger ledger){
+        String directory = System.getProperty("user.dir");
+        directory = (directory + "/src/FileData/Ledger.ser");
+        System.out.println("DIRECTORY " + directory);
+
+        System.out.println("serializing theData");
+        try {
+            FileOutputStream outputStream = new FileOutputStream(directory);
+            ObjectOutputStream objectStream = new ObjectOutputStream(outputStream);
+            for (Transaction transaction : ledger.getAllTransactions()){
+                objectStream.writeObject(transaction);
+            }
+            objectStream.close();
+            outputStream.close();
+        }
+        catch (Exception e) { e.printStackTrace(); }
+    }
+
+    public void readTransactionsFromFile() throws IOException {
+        String directory = System.getProperty("user.dir");
+        directory = (directory + "/src/FileData/Ledger.ser");
+        System.out.println("DIRECTORY " + directory);
+
+        System.out.println("deserializing theData");
+        FileInputStream inputStream = new FileInputStream(directory);
+        ObjectInputStream objectStream = new ObjectInputStream(inputStream);
+        Object object = new Object();
+        ArrayList<Transaction> transactions = new ArrayList<>();
         while (true){
             try {
                 object = objectStream.readObject();
-                accounts.add((Account)object);
+                transactions.add((Transaction)object);
             }
             catch (EOFException | FileNotFoundException e) {
                 break;
@@ -241,7 +232,21 @@ public class Server implements Runnable {
             }
         }
         objectStream.close();
-        accounts.addAll(accounts);
+        inputStream.close();
+        ArrayList<Transaction> orderedMessages = new ArrayList<>();
+
+        while (!transactions.isEmpty()){
+            LocalDateTime minTime = LocalDateTime.now();
+            int minIndex = 0;
+            for (int i = 0; i < transactions.size(); i++){
+                if (minTime.isAfter(transactions.get(i).getTimestamp())){
+                    minIndex = i;
+                    minTime = transactions.get(i).getTimestamp();
+                }
+            }
+            orderedMessages.add(transactions.remove(minIndex));
+        }
+
     }
 
 
